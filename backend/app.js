@@ -1,6 +1,10 @@
 const express = require("express");
+// deploiement d'express
 const app = express();
+// lie à la base de donnée
 const mongoose = require("mongoose");
+// empeche d'injecter du code nosql
+const sanitize = require("mongo-sanitize");
 
 const sauceRoutes = require("./routes/sauce");
 const userRoutes = require("./routes/user");
@@ -32,5 +36,5 @@ app.use((req, res, next) => {
 app.use("/api/sauces", sauceRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/images", express.static(path.join(__dirname, "images")));
-
+app.use(sanitize);
 module.exports = app;
