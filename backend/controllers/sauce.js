@@ -43,7 +43,9 @@ exports.updateSauce = (req, res) => {
     req.body.likes ||
     req.body.dislikes ||
     req.body.usersLiked ||
-    req.body.usersDisliked
+    req.body.usersDisliked ||
+    req.body.heat > 10 ||
+    req.body.heat < 0
   ) {
     res.status(400).json({ error: "Vous ne pouvez pas changer ces elements" });
   } else {
@@ -83,18 +85,35 @@ exports.getAllSauce = (req, res) => {
 
 //gestion des likes
 exports.likeSauce = (req, res) => {
-  const userId = req.body.userId;
+  const userId = req.auth.userId;
   const sauceId = req.params.id;
   const likeState = req.body.like;
 
   switch (likeState) {
     //si like=1 on incrémente l'attribut likes de la sauce et on ajoute l'id de l'utilisateur dans le tableau usersLiked
     case 1:
-      Sauce.updateOne(
-        { _id: sauceId },
-        { $inc: { likes: 1 }, $push: { usersLiked: userId } }
-      )
-        .then(() => res.status(200).json({ message: "Like ajouté à la sauce" }))
+      Sauce.findOne({ _id: sauceId })
+        .then((sauce) => {
+          if (
+            sauce.usersLiked.includes(userId) ||
+            sauce.usersDisliked.includes(userId)
+          ) {
+            res
+              .status(400)
+              .json({ error: "Vous ne pouvez pas modifier ces éléments" });
+          } else {
+            Sauce.updateOne(
+              { _id: sauceId },
+              { $inc: { likes: 1 }, $push: { usersLiked: userId } }
+            )
+              .then(
+                () =>
+                  res.status(200).json({ message: "Like ajouté à la sauce" }),
+                console.log(userId)
+              )
+              .catch((error) => res.status(400).json({ error }));
+          }
+        })
         .catch((error) => res.status(400).json({ error }));
       break;
     //si like=0 alors on étudie les deux tableaux usersLiked et usersDisliked et on mets à jour les attributs likes et dislikes ainsi que les tableaux eux meme selon la présence de l'userId dans l'un des deux
@@ -108,10 +127,12 @@ exports.likeSauce = (req, res) => {
               { _id: sauceId },
               { $inc: { likes: -1 }, $pull: { usersLiked: userId } }
             )
-              .then(() =>
-                res
-                  .status(200)
-                  .json({ message: "Vous avez enlever votre like !" })
+              .then(
+                () =>
+                  res
+                    .status(200)
+                    .json({ message: "Vous avez enlever votre like !" }),
+                console.log(userId)
               )
               .catch((error) => res.status(400).json({ error }));
           } else if (sauce.usersDisliked.includes(userId)) {
@@ -132,14 +153,25 @@ exports.likeSauce = (req, res) => {
       break;
     //si like=-1 on incrémente l'attribut dislikes de la sauce et on ajoute l'id de l'utilisateur dans le tableau usersDisliked
     case -1:
-      Sauce.updateOne(
-        { _id: sauceId },
-        { $inc: { dislikes: 1 }, $push: { usersDisliked: userId } }
-      )
-        .then(() =>
-          res.status(200).json({ message: "dislike ajouté à la sauce" })
-        )
-        .catch((error) => res.status(400).json({ error }));
+      Sauce.findOne({ _id: sauceId }).then((sauce) => {
+        if (
+          sauce.usersLiked.includes(userId) ||
+          sauce.usersDisliked.includes(userId)
+        ) {
+          res
+            .status(400)
+            .json({ error: "Vous ne pouvez pas modifier ces éléments" });
+        } else {
+          Sauce.updateOne(
+            { _id: sauceId },
+            { $inc: { dislikes: 1 }, $push: { usersDisliked: userId } }
+          )
+            .then(() =>
+              res.status(200).json({ message: "dislike ajouté à la sauce" })
+            )
+            .catch((error) => res.status(400).json({ error }));
+        }
+      });
       break;
   }
 };
