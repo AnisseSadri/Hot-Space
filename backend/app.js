@@ -12,7 +12,7 @@ const path = require("path");
 
 mongoose
   .connect(
-    "mongodb+srv://anisse:anisse@cluster0.kdbxfok.mongodb.net/?retryWrites=true&w=majority",
+    "mongodb+srv://nomBaseDeDonnée:mdpBaseDeDonnée@cluster0.kdbxfok.mongodb.net/?retryWrites=true&w=majority",
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => console.log("Connexion à MongoDB réussie !"))
