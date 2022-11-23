@@ -45,7 +45,8 @@ exports.updateSauce = (req, res) => {
     req.body.usersLiked ||
     req.body.usersDisliked ||
     req.body.heat > 10 ||
-    req.body.heat < 0
+    req.body.heat < 0 ||
+    Number.isInteger(req.body.heat) == false
   ) {
     res.status(400).json({ error: "Vous ne pouvez pas changer ces elements" });
   } else {
@@ -98,18 +99,16 @@ exports.likeSauce = (req, res) => {
             sauce.usersLiked.includes(userId) ||
             sauce.usersDisliked.includes(userId)
           ) {
-            res
-              .status(400)
-              .json({ error: "Vous ne pouvez pas modifier ces éléments" });
+            res.status(400).json({
+              error: "Vous ne pouvez pas ajouter de likes ou de dislikes",
+            });
           } else {
             Sauce.updateOne(
               { _id: sauceId },
               { $inc: { likes: 1 }, $push: { usersLiked: userId } }
             )
-              .then(
-                () =>
-                  res.status(200).json({ message: "Like ajouté à la sauce" }),
-                console.log(userId)
+              .then(() =>
+                res.status(200).json({ message: "Like ajouté à la sauce" })
               )
               .catch((error) => res.status(400).json({ error }));
           }
@@ -127,12 +126,10 @@ exports.likeSauce = (req, res) => {
               { _id: sauceId },
               { $inc: { likes: -1 }, $pull: { usersLiked: userId } }
             )
-              .then(
-                () =>
-                  res
-                    .status(200)
-                    .json({ message: "Vous avez enlever votre like !" }),
-                console.log(userId)
+              .then(() =>
+                res
+                  .status(200)
+                  .json({ message: "Vous avez enlever votre like !" })
               )
               .catch((error) => res.status(400).json({ error }));
           } else if (sauce.usersDisliked.includes(userId)) {
